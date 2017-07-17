@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Udacity Movie Search</string>
+
+    <string name="title">title</string>
+    <string name="id">id</string>
+    <string name="poster_path">poster_path</string>
+    <string name="release_date">release_date</string>
+    <string name="overview">overview</string>
+    <string name="vote_average">vote_average</string>
+    <string name="base_url">https://api.themoviedb.org/3/movie</string>
+    <string name="popular">popular</string>
+
+
+    <string name="api_key">260e8fc34e66c7fe0014c73b246caacc</string>
+
+    <string name="empty_list_text">No movies available</string>
+
+    <string name="sample_overview">"A live-action adaptation of Disney's version of the classic 'Beauty and the Beast' tale of a cursed prince and a beautiful young woman who helps him break the spell."</string>
+
+    <string name="settings">settings</string>
+
+</resources>

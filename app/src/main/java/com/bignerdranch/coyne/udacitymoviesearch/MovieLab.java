@@ -43,12 +43,20 @@ public class MovieLab {
     }
 
     public void updateMovie(Movie Movie){
-        String uuid = Movie.getId().toString();
+        String uuid = Movie.getId();
         ContentValues values = getContentValues(Movie);
 
         mDatabase.update(MovieTable.NAME, values,
                 MovieTable.Cols.ID + " = ?",
                 new String[]{uuid});
+    }
+
+    public void deleteMovie(Movie movie){
+//        ContentValues values = getContentValues(movie);
+
+        mDatabase.delete(MovieTable.NAME,
+                MovieTable.Cols.ID + " = ?",
+                new String[]{movie.getId()});
     }
 
     private MovieCursorWrapper queryMovies(String whereClause, String[] whereArgs){
@@ -82,10 +90,10 @@ public class MovieLab {
         return Movies;
     }
 
-    public Movie getMovie(UUID id){
+    public Movie getMovie(String id){
         MovieCursorWrapper cursor = queryMovies(
                 MovieTable.Cols.ID + " = ?",
-                new String[]{id.toString()}
+                new String[]{id}
         );
         try {
             if (cursor.getCount() == 0) {

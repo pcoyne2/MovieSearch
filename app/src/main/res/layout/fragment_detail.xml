@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    >
+<android.support.constraint.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/black"
+        android:padding="20dp"
+        android:text="TextView"
+        android:textColor="@android:color/white"
+        android:textSize="32sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Chappie"
+        app:layout_constraintHorizontal_bias="0.0"
+        />
+
+    <ImageView
+        android:id="@+id/poster"
+        android:layout_width="150dp"
+        android:layout_height="225dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title"
+        app:srcCompat="@drawable/despicable_me"
+        android:layout_marginStart="24dp"/>
+
+    <TextView
+        android:id="@+id/release_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="24dp"
+        android:text="TextView"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        app:layout_constraintLeft_toRightOf="@+id/poster"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title"
+        tools:text="2015"/>
+
+    <TextView
+        android:id="@+id/vote_average"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="TextView"
+        app:layout_constraintLeft_toRightOf="@+id/poster"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/release_date"
+        tools:text="8.1/10"/>
+
+    <ImageButton
+        android:id="@+id/favorite"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/info_background"
+        app:srcCompat="@drawable/ic_star"
+        android:layout_marginRight="32dp"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/poster"
+        android:layout_marginEnd="32dp"/>
+
+    <TextView
+        android:id="@+id/overview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="32dp"
+        android:layout_marginRight="24dp"
+        android:layout_marginTop="24dp"
+        android:text="TextView"
+        app:layout_constraintHorizontal_bias="0.479"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/poster"
+        tools:text="@string/sample_overview"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="24dp"/>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/trailer_recycler_view"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/overview"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"/>
+
+</android.support.constraint.ConstraintLayout>
+</ScrollView>

@@ -1,8 +1,12 @@
 package com.bignerdranch.coyne.udacitymoviesearch;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
@@ -15,6 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
@@ -40,6 +45,8 @@ public class MovieListFragment extends Fragment {
     private RecyclerView mRecyclerView;
     private MovieAdapter mMovieAdapter;
     private Callbacks mCallbacks;
+    private String sortBy;
+    private int pageNumber=1;
 
     List<Movie> movies = new ArrayList<>();
 
@@ -47,6 +54,10 @@ public class MovieListFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+        sortBy = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.popular));
+        pageNumber = 1;
+        setHasOptionsMenu(true);
     }
 
     @Nullable
@@ -65,10 +76,6 @@ public class MovieListFragment extends Fragment {
 //            MovieLab.get(getActivity()).addMovie(movie);
 //        }
 
-        FetchMovieTask fetchMovieTask = new FetchMovieTask();
-        String[] params = new String[]{"popular", "1"};
-        fetchMovieTask.execute(params);
-
         updateList();
 
         return view;
@@ -77,7 +84,12 @@ public class MovieListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        updateList();
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String newSort = preferences.getString(getString(R.string.pref_sort_key), getString(R.string.pref_most_popular));
+        if(!sortBy.equalsIgnoreCase(newSort)){
+            updateList();
+        }
+        Log.d("TAG", "OnResume");
     }
 
     @Override
@@ -88,13 +100,33 @@ public class MovieListFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
         switch (item.getItemId()){
-            case R.id.settings:
+            case R.id.top_rated:
+//                sortBy = getString(R.string.top_rated);
+                pageNumber = 1;
+                editor.putString(getString(R.string.pref_sort_key), getString(R.string.top_rated));
+                editor.commit();
+                updateList();
+                return true;
+            case R.id.favorites:
+                editor.putString(getString(R.string.pref_sort_key), getString(R.string.favorites));
+                editor.commit();
+                pageNumber = 1;
+                updateList();
+                return true;
+            case R.id.popular:
+                editor.putString(getString(R.string.pref_sort_key), getString(R.string.popular));
+                editor.commit();
+                pageNumber = 1;
+                updateList();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
 
     public interface Callbacks{
         void onMovieSelected(Movie movie);
@@ -102,8 +134,16 @@ public class MovieListFragment extends Fragment {
 
     private void updateList(){
         //Check if loading favorites
-//        MovieLab movieLab = MovieLab.get(getActivity());
-//        movies = movieLab.getMovies();
+        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+        sortBy = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.popular));
+        if(sortBy.equals(getString(R.string.favorites))){
+            MovieLab movieLab = MovieLab.get(getActivity());
+            movies = movieLab.getMovies();
+        }else{
+            FetchMovieTask fetchMovieTask = new FetchMovieTask();
+            String[] params = new String[]{sortBy, Integer.toString(pageNumber)};
+            fetchMovieTask.execute(params);
+        }
 //
         if(mMovieAdapter == null){
             mMovieAdapter = new MovieAdapter(movies);
@@ -138,7 +178,6 @@ public class MovieListFragment extends Fragment {
                 String posterPath = dayForecast.getString(getString(R.string.poster_path));
                 String id = dayForecast.getString(getString(R.string.id));
                 String plot = dayForecast.getString(getString(R.string.overview));
-                Log.d("TAG", "TAG");
                 Movie movie = new Movie(id, title, release, voteAverage, posterPath, plot);
 
                 movies.add(movie);
@@ -238,7 +277,8 @@ public class MovieListFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String[] strings) {
-            updateList();
+//            updateList();
+            mMovieAdapter.notifyDataSetChanged();
             super.onPostExecute(strings);
         }
     }
@@ -274,7 +314,15 @@ public class MovieListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-//            mCallbacks.onMovieSelected(mMovie);
+            Intent intent = new Intent(getActivity(), DetailActivity.class);
+            //Used for testing should pass information more efficiently
+            intent.putExtra(getString(R.string.title), mMovie.getTitle());
+            intent.putExtra(getString(R.string.id), mMovie.getId());
+            intent.putExtra(getString(R.string.overview), mMovie.getOverview());
+            intent.putExtra(getString(R.string.poster_path), mMovie.getPosterPath());
+            intent.putExtra(getString(R.string.release_date), mMovie.getReleaseDate());
+            intent.putExtra(getString(R.string.vote_average), mMovie.getVoteAverage());
+            startActivity(intent);
         }
     }
 

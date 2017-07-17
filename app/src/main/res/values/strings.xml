@@ -9,14 +9,28 @@
     <string name="vote_average">vote_average</string>
     <string name="base_url">https://api.themoviedb.org/3/movie</string>
     <string name="popular">popular</string>
+    <string name="favorites">favorites</string>
+    <string name="top_rated">top_rated</string>
+
+    <!--trailer information-->
+    <string name="key">key</string>
+    <string name="name">name</string>
+    <string name="site">site</string>
 
 
-    <string name="api_key">Put API key here</string>
+    <string name="api_key">Place API key here</string>
 
     <string name="empty_list_text">No movies available</string>
 
     <string name="sample_overview">"A live-action adaptation of Disney's version of the classic 'Beauty and the Beast' tale of a cursed prince and a beautiful young woman who helps him break the spell."</string>
 
     <string name="settings">settings</string>
+
+    <string name="pref_sort_label">Sort by</string>
+    <string name="pref_most_popular_label">Most Popular</string>
+    <string name="pref_high_rated_label">Highest Rated</string>
+    <string name="pref_high_rated">top_rated</string>
+    <string name="pref_most_popular">popular</string>
+    <string name="pref_sort_key">SortBy</string>
 
 </resources>

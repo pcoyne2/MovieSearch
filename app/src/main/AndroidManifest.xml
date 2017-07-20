@@ -14,7 +14,6 @@
         <activity android:name=".MovieListActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
@@ -22,6 +21,10 @@
         </activity>
         <activity android:name=".DetailActivity">
         </activity>
+        <provider
+            android:authorities="com.bignerdranch.coyne.udacitymoviesearch"
+            android:name="com.bignerdranch.coyne.udacitymoviesearch.contentproviderdb.MovieContentProvider"
+            android:exported="false"/>
     </application>
 
 </manifest>

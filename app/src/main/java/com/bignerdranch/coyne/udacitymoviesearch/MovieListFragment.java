@@ -3,6 +3,8 @@ package com.bignerdranch.coyne.udacitymoviesearch;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -21,6 +23,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bignerdranch.coyne.udacitymoviesearch.contentproviderdb.MovieContract;
+import com.bignerdranch.coyne.udacitymoviesearch.contentproviderdb.MovieDbHelper;
+import com.bignerdranch.coyne.udacitymoviesearch.contentproviderdb.TestUtil;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -48,6 +53,8 @@ public class MovieListFragment extends Fragment {
     private String sortBy;
     private int pageNumber=1;
 
+    private SQLiteDatabase mDb;
+
     List<Movie> movies = new ArrayList<>();
 
 
@@ -55,7 +62,7 @@ public class MovieListFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-        sortBy = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.popular));
+        sortBy = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.favorites));
         pageNumber = 1;
         setHasOptionsMenu(true);
     }
@@ -68,13 +75,13 @@ public class MovieListFragment extends Fragment {
         mRecyclerView = (RecyclerView)view.findViewById(R.id.movie_recycler_view);
         mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
 
-//        for(int i=0; i<5; i++){
-//            Movie movie = new Movie("324852", "Despicable Me 3",
-//                    "2017-06-29", "6.2", //"/6aUWe0GSl69wMTSWWexsorMIvwU.jpg",
-//                    "/5qcUGqWoWhEsoQwNUrtf3y3fcWn.jpg",
-//                    getString(R.string.sample_overview));
-//            MovieLab.get(getActivity()).addMovie(movie);
-//        }
+        MovieDbHelper dbHelper = new MovieDbHelper(getActivity());
+
+        mDb = dbHelper.getWritableDatabase();
+
+//        TestUtil.insertFakeData(mDb);
+
+//        Cursor cursor = getAllMovies();
 
         updateList();
 
@@ -85,10 +92,10 @@ public class MovieListFragment extends Fragment {
     public void onResume() {
         super.onResume();
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        String newSort = preferences.getString(getString(R.string.pref_sort_key), getString(R.string.pref_most_popular));
-        if(!sortBy.equalsIgnoreCase(newSort)){
+        String newSort = preferences.getString(getString(R.string.pref_sort_key), getString(R.string.favorites));
+//        if(!sortBy.equalsIgnoreCase(newSort)){
             updateList();
-        }
+//        }
         Log.d("TAG", "OnResume");
     }
 
@@ -135,10 +142,20 @@ public class MovieListFragment extends Fragment {
     private void updateList(){
         //Check if loading favorites
         SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-        sortBy = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.popular));
+        sortBy = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.favorites));
         if(sortBy.equals(getString(R.string.favorites))){
-            MovieLab movieLab = MovieLab.get(getActivity());
-            movies = movieLab.getMovies();
+//            MovieLab movieLab = MovieLab.get(getActivity());
+            movies.clear();
+            Cursor cursor = getAllMovies();
+//                    getActivity().getContentResolver().query(MovieContract.MovieEntry.CONTENT_URI,
+//                    null,
+//                    null,
+//                    null,
+//                    null);
+            cursor.moveToFirst();
+            while(cursor.moveToNext()){
+                movies.add(getMovieFromCursor(cursor));
+            }
         }else{
             FetchMovieTask fetchMovieTask = new FetchMovieTask();
             String[] params = new String[]{sortBy, Integer.toString(pageNumber)};
@@ -146,12 +163,41 @@ public class MovieListFragment extends Fragment {
         }
 //
         if(mMovieAdapter == null){
-            mMovieAdapter = new MovieAdapter(movies);
+            mMovieAdapter = new MovieAdapter(getActivity(), movies);
             mRecyclerView.setAdapter(mMovieAdapter);
         }else{
             mMovieAdapter.setMovies(movies);
             mMovieAdapter.notifyDataSetChanged();
         }
+    }
+
+    private Cursor getAllMovies(){
+        return mDb.query(MovieContract.MovieEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+    }
+
+    private Movie getMovieFromCursor(Cursor c){
+        int idIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_ID);
+        int titleIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_TITLE);
+        int dateIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_DATE);
+        int posterIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_POSTER);
+        int overviewIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_OVERVIEW);
+        int avgIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_AVG);
+
+        String id = c.getString(idIndex);
+        String title = c.getString(titleIndex);
+        String date = c.getString(dateIndex);
+        String poster = c.getString(posterIndex);
+        String overview = c.getString(overviewIndex);
+        String avg = c.getString(avgIndex);
+
+        Movie movie = new Movie(id, title, date, avg, poster, overview);
+        return movie;
     }
 
     public class FetchMovieTask extends AsyncTask<String, Void, String[]> {
@@ -283,78 +329,4 @@ public class MovieListFragment extends Fragment {
         }
     }
 
-    private class MovieHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        private ImageView mPosterImage;
-        private Movie mMovie;
-
-        public MovieHolder(LayoutInflater inflater, ViewGroup parent) {
-            super(inflater.inflate(R.layout.list_movie_item, parent, false));
-            itemView.setOnClickListener(this);
-
-            mPosterImage = (ImageView)itemView.findViewById(R.id.grid_movie_poster);
-        }
-
-        public void bind(Movie movie) {
-            mMovie = movie;
-//            mTitleTextView.setText(mMovie.getTitle());
-//            SimpleDateFormat dateFormat = new SimpleDateFormat(MovieFragment.DATE_FORMAT);
-//            SimpleDateFormat timeFormat = new SimpleDateFormat(MovieFragment.TIME_FORMAT);
-//            mDateTextView.setText(dateFormat.format(mMovie.getDate()) + " " + timeFormat.format(mMovie.getTime()));
-//            mSolvedImageView.setVisibility(movie.isSolved() ? View.VISIBLE : View.GONE);
-            Picasso.with(getActivity()).load("https://image.tmdb.org/t/p/original" + movie.getPosterPath())
-                    .fit()
-                    .centerCrop()
-                    .error(R.drawable.despicable_me)
-                    .into(mPosterImage);
-        }
-
-        public Movie getMovie() {
-            return mMovie;
-        }
-
-        @Override
-        public void onClick(View v) {
-            Intent intent = new Intent(getActivity(), DetailActivity.class);
-            //Used for testing should pass information more efficiently
-            intent.putExtra(getString(R.string.title), mMovie.getTitle());
-            intent.putExtra(getString(R.string.id), mMovie.getId());
-            intent.putExtra(getString(R.string.overview), mMovie.getOverview());
-            intent.putExtra(getString(R.string.poster_path), mMovie.getPosterPath());
-            intent.putExtra(getString(R.string.release_date), mMovie.getReleaseDate());
-            intent.putExtra(getString(R.string.vote_average), mMovie.getVoteAverage());
-            startActivity(intent);
-        }
-    }
-
-    private class MovieAdapter extends RecyclerView.Adapter<MovieHolder> {
-        private List<Movie> mMovies;
-
-        public MovieAdapter(List<Movie> movies) {
-            mMovies = movies;
-        }
-
-        @Override
-        public MovieHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
-                return new MovieHolder(layoutInflater, parent);
-
-        }
-
-        @Override
-        public void onBindViewHolder(MovieHolder holder, int position) {
-            Movie movie = mMovies.get(position);
-            holder.bind(movie);
-
-
-        }
-
-        @Override
-        public int getItemCount() {
-            return mMovies.size();
-        }
-
-        public void setMovies(List<Movie> movies) {
-            mMovies = movies;
-        }
-    }
 }

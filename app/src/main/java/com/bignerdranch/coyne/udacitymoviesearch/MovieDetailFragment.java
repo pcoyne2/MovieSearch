@@ -1,6 +1,9 @@
 package com.bignerdranch.coyne.udacitymoviesearch;
 
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -17,6 +20,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bignerdranch.coyne.udacitymoviesearch.contentproviderdb.MovieContract;
+//import com.bignerdranch.coyne.udacitymoviesearch.database.MovieDbSchema;
+import com.bignerdranch.coyne.udacitymoviesearch.contentproviderdb.MovieDbHelper;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -52,6 +58,8 @@ public class MovieDetailFragment extends Fragment {
 
     private TrailerAdapter mTrailerAdapter;
 
+    private SQLiteDatabase db;
+
     Movie mMovie;
 
     public static MovieDetailFragment newInstance(String id){
@@ -71,6 +79,13 @@ public class MovieDetailFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_detail, container, false);
 
+        MovieDbHelper dbHelper = new MovieDbHelper(getActivity());
+
+        db = dbHelper.getWritableDatabase();
+
+        mTrailerAdapter = new TrailerAdapter(getActivity(), trailers);
+
+
         header = (TextView)view.findViewById(R.id.title);
         releaseDate = (TextView)view.findViewById(R.id.release_date);
         voteAvg = (TextView)view.findViewById(R.id.vote_average);
@@ -79,16 +94,20 @@ public class MovieDetailFragment extends Fragment {
         poster = (ImageView)view.findViewById(R.id.poster);
         trailerRecyclerView = (RecyclerView)view.findViewById(R.id.trailer_recycler_view);
         trailerRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        trailerRecyclerView.setAdapter(mTrailerAdapter);
+
 
         favorite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(isFavorite){
+                    removeFavorite();
                     //Delete Movie
-                    MovieLab.get(getActivity()).deleteMovie(mMovie);
+//                    MovieLab.get(getActivity()).deleteMovie(mMovie);
                     favorite.setImageResource(R.drawable.ic_star);
                 }else {
-                    MovieLab.get(getActivity()).addMovie(mMovie);
+                    addFavorite();
+//                    MovieLab.get(getActivity()).addMovie(mMovie);
                     favorite.setImageResource(R.drawable.ic_star_favorite);
                 }
                 isFavorite = !isFavorite;
@@ -120,13 +139,13 @@ public class MovieDetailFragment extends Fragment {
     }
 
     public void isMovieFavorite(){
-        Movie movie = MovieLab.get(getActivity()).getMovie(mMovie.getId());
-        if(movie == null){
-            isFavorite = false;
-            favorite.setImageResource(R.drawable.ic_star);
-        }else{
-            isFavorite = true;
-            favorite.setImageResource(R.drawable.ic_star_favorite);
+        Cursor cursor = getAllMovies();
+        cursor.moveToFirst();
+        while(cursor.moveToNext()){
+            if(mMovie.getId().equals(getMovieFromCursor(cursor).getId())){
+                isFavorite = true;
+                favorite.setImageResource(R.drawable.ic_star_favorite);
+            }
         }
     }
 
@@ -258,75 +277,68 @@ public class MovieDetailFragment extends Fragment {
 //                adapter.add(trailers.get(i));
 //            }
 //            list.setAdapter(adapter);
-            mTrailerAdapter = new TrailerAdapter(trailers);
-            trailerRecyclerView.setAdapter(mTrailerAdapter);
+            mTrailerAdapter.setMovies(trailers);
+            mTrailerAdapter.notifyDataSetChanged();
 
             super.onPostExecute(strings);
         }
     }
 
-    private class TrailerHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        Trailer mTrailer;
-        TextView trailerName;
+    public void addFavorite(){
+        ContentValues values = new ContentValues();
 
-        public TrailerHolder(LayoutInflater inflater, ViewGroup parent) {
-            super(inflater.inflate(R.layout.trailer_list_item, parent, false));
-            itemView.setOnClickListener(this);
+        values.put(MovieContract.MovieEntry.COLUMN_ID, mMovie.getId());
+        values.put(MovieContract.MovieEntry.COLUMN_TITLE, mMovie.getTitle());
+        values.put(MovieContract.MovieEntry.COLUMN_DATE, mMovie.getReleaseDate());
+        values.put(MovieContract.MovieEntry.COLUMN_AVG, mMovie.getVoteAverage());
+        values.put(MovieContract.MovieEntry.COLUMN_POSTER, mMovie.getPosterPath());
+        values.put(MovieContract.MovieEntry.COLUMN_OVERVIEW, mMovie.getOverview());
 
-            trailerName= (TextView) itemView.findViewById(R.id.trailer_name);
-        }
+        Uri uri = getActivity().getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, values);
 
-        public void bind(Trailer trailer) {
-            mTrailer = trailer;
-//            mTitleTextView.setText(mMovie.getTitle());
-//            SimpleDateFormat dateFormat = new SimpleDateFormat(MovieFragment.DATE_FORMAT);
-//            SimpleDateFormat timeFormat = new SimpleDateFormat(MovieFragment.TIME_FORMAT);
-//            mDateTextView.setText(dateFormat.format(mMovie.getDate()) + " " + timeFormat.format(mMovie.getTime()));
-//            mSolvedImageView.setVisibility(movie.isSolved() ? View.VISIBLE : View.GONE);
-            trailerName.setText(trailer.getTitle());
-        }
-
-        public Trailer getMovie() {
-            return mTrailer;
-        }
-
-        @Override
-        public void onClick(View v) {
-            //Send intent for youtube
-            Toast.makeText(getActivity(), mTrailer.getTitle(), Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v="+mTrailer.getKey())));
+        if(uri != null){
+//            Toast.makeText(getActivity().getBaseContext(), uri.toString(), Toast.LENGTH_SHORT).show();
         }
     }
 
-    private class TrailerAdapter extends RecyclerView.Adapter<TrailerHolder> {
-        private List<Trailer> mTrailers;
+    public void removeFavorite(){
+        Uri uri = MovieContract.MovieEntry.CONTENT_URI;
+        uri = uri.buildUpon().appendPath(mMovie.getId()).build();
 
-        public TrailerAdapter(List<Trailer> trailers) {
-            mTrailers = trailers;
+        if(getActivity().getContentResolver().delete(uri, null, null)>0){
+            isFavorite = false;
         }
 
-        @Override
-        public TrailerHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
-            return new TrailerHolder(layoutInflater, parent);
-
-        }
-
-        @Override
-        public void onBindViewHolder(TrailerHolder holder, int position) {
-            Trailer trailer = mTrailers.get(position);
-            holder.bind(trailer);
-
-
-        }
-
-        @Override
-        public int getItemCount() {
-            return mTrailers.size();
-        }
-
-        public void setMovies(List<Trailer> trailers) {
-            mTrailers = trailers;
-        }
     }
+
+    private Cursor getAllMovies(){
+        return db.query(MovieContract.MovieEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+    }
+
+
+    private Movie getMovieFromCursor(Cursor c){
+        int idIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_ID);
+        int titleIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_TITLE);
+        int dateIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_DATE);
+        int posterIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_POSTER);
+        int overviewIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_OVERVIEW);
+        int avgIndex = c.getColumnIndex(MovieContract.MovieEntry.COLUMN_AVG);
+
+        String id = c.getString(idIndex);
+        String title = c.getString(titleIndex);
+        String date = c.getString(dateIndex);
+        String poster = c.getString(posterIndex);
+        String overview = c.getString(overviewIndex);
+        String avg = c.getString(avgIndex);
+
+        Movie movie = new Movie(id, title, date, avg, poster, overview);
+        return movie;
+    }
+
 }

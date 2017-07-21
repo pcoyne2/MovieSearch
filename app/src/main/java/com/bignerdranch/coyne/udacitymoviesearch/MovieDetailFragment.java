@@ -58,7 +58,7 @@ public class MovieDetailFragment extends Fragment {
 
     private TrailerAdapter mTrailerAdapter;
 
-    private SQLiteDatabase db;
+//    private SQLiteDatabase db;
 
     Movie mMovie;
 
@@ -79,9 +79,9 @@ public class MovieDetailFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_detail, container, false);
 
-        MovieDbHelper dbHelper = new MovieDbHelper(getActivity());
-
-        db = dbHelper.getWritableDatabase();
+//        MovieDbHelper dbHelper = new MovieDbHelper(getActivity());
+//
+//        db = dbHelper.getWritableDatabase();
 
         mTrailerAdapter = new TrailerAdapter(getActivity(), trailers);
 
@@ -312,9 +312,7 @@ public class MovieDetailFragment extends Fragment {
     }
 
     private Cursor getAllMovies(){
-        return db.query(MovieContract.MovieEntry.TABLE_NAME,
-                null,
-                null,
+        return getActivity().getContentResolver().query(MovieContract.MovieEntry.CONTENT_URI,
                 null,
                 null,
                 null,

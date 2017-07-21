@@ -53,7 +53,7 @@ public class MovieListFragment extends Fragment {
     private String sortBy;
     private int pageNumber=1;
 
-    private SQLiteDatabase mDb;
+//    private SQLiteDatabase mDb;
 
     List<Movie> movies = new ArrayList<>();
 
@@ -75,9 +75,9 @@ public class MovieListFragment extends Fragment {
         mRecyclerView = (RecyclerView)view.findViewById(R.id.movie_recycler_view);
         mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
 
-        MovieDbHelper dbHelper = new MovieDbHelper(getActivity());
-
-        mDb = dbHelper.getWritableDatabase();
+//        MovieDbHelper dbHelper = new MovieDbHelper(getActivity());
+//
+//        mDb = dbHelper.getWritableDatabase();
 
 //        TestUtil.insertFakeData(mDb);
 
@@ -153,6 +153,9 @@ public class MovieListFragment extends Fragment {
 //                    null,
 //                    null);
             cursor.moveToFirst();
+            if(cursor.getCount()!= 0){
+                movies.add(getMovieFromCursor(cursor));
+            }
             while(cursor.moveToNext()){
                 movies.add(getMovieFromCursor(cursor));
             }
@@ -166,15 +169,14 @@ public class MovieListFragment extends Fragment {
             mMovieAdapter = new MovieAdapter(getActivity(), movies);
             mRecyclerView.setAdapter(mMovieAdapter);
         }else{
+            mRecyclerView.getRecycledViewPool().clear();
             mMovieAdapter.setMovies(movies);
             mMovieAdapter.notifyDataSetChanged();
         }
     }
 
     private Cursor getAllMovies(){
-        return mDb.query(MovieContract.MovieEntry.TABLE_NAME,
-                null,
-                null,
+        return getActivity().getContentResolver().query(MovieContract.MovieEntry.CONTENT_URI,
                 null,
                 null,
                 null,
@@ -324,6 +326,7 @@ public class MovieListFragment extends Fragment {
         @Override
         protected void onPostExecute(String[] strings) {
 //            updateList();
+            mRecyclerView.getRecycledViewPool().clear();
             mMovieAdapter.notifyDataSetChanged();
             super.onPostExecute(strings);
         }

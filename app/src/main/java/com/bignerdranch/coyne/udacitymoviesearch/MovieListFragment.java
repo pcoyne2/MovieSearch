@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -47,11 +48,14 @@ import java.util.List;
 
 public class MovieListFragment extends Fragment {
 
+    private final String KEY_RECYCLER_STATE = "recycler_state";
+
     private RecyclerView mRecyclerView;
     private MovieAdapter mMovieAdapter;
     private Callbacks mCallbacks;
     private String sortBy;
     private int pageNumber=1;
+    private static Bundle rvStateBundle;
 
 //    private SQLiteDatabase mDb;
 
@@ -66,6 +70,7 @@ public class MovieListFragment extends Fragment {
         pageNumber = 1;
         setHasOptionsMenu(true);
     }
+
 
     @Nullable
     @Override
@@ -83,7 +88,7 @@ public class MovieListFragment extends Fragment {
 
 //        Cursor cursor = getAllMovies();
 
-        updateList();
+//        updateList();
 
         return view;
     }
@@ -91,12 +96,25 @@ public class MovieListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        String newSort = preferences.getString(getString(R.string.pref_sort_key), getString(R.string.favorites));
+
+//        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+//        String newSort = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.favorites));
 //        if(!sortBy.equalsIgnoreCase(newSort)){
             updateList();
 //        }
         Log.d("TAG", "OnResume");
+        if(rvStateBundle != null){
+            Parcelable listState = rvStateBundle.getParcelable(KEY_RECYCLER_STATE);
+            mRecyclerView.getLayoutManager().onRestoreInstanceState(listState);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        rvStateBundle = new Bundle();
+        Parcelable listState = mRecyclerView.getLayoutManager().onSaveInstanceState();
+        rvStateBundle.putParcelable(KEY_RECYCLER_STATE, listState);
     }
 
     @Override

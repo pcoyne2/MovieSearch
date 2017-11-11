@@ -57,7 +57,7 @@ public class MovieListFragment extends Fragment {
     private int pageNumber=1;
     private static Bundle rvStateBundle;
 
-//    private SQLiteDatabase mDb;
+    private boolean isLoading = false;
 
     List<Movie> movies = new ArrayList<>();
 
@@ -78,17 +78,36 @@ public class MovieListFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_movie_list, container, false);
 
         mRecyclerView = (RecyclerView)view.findViewById(R.id.movie_recycler_view);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
 
-//        MovieDbHelper dbHelper = new MovieDbHelper(getActivity());
-//
-//        mDb = dbHelper.getWritableDatabase();
+        final GridLayoutManager glm = new GridLayoutManager(getActivity(), 2);
 
-//        TestUtil.insertFakeData(mDb);
+        mRecyclerView.setLayoutManager(glm);
 
-//        Cursor cursor = getAllMovies();
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+            }
 
-//        updateList();
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                int visibleItemCount = glm.getChildCount();
+                int totalItemCount = glm.getItemCount();
+                int firstVisibleItemPosition = glm.findFirstVisibleItemPosition();
+
+                if(!isLoading){
+                    if((visibleItemCount + firstVisibleItemPosition) >= totalItemCount
+                            && firstVisibleItemPosition >=0){
+                        pageNumber++;
+                        FetchMovieTask fetchMovieTask = new FetchMovieTask();
+                        String[] params = new String[]{sortBy, Integer.toString(pageNumber)};
+                        fetchMovieTask.execute(params);
+                    }
+
+                }
+            }
+        });
 
         return view;
     }
@@ -97,11 +116,8 @@ public class MovieListFragment extends Fragment {
     public void onResume() {
         super.onResume();
 
-//        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-//        String newSort = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.favorites));
-//        if(!sortBy.equalsIgnoreCase(newSort)){
-            updateList();
-//        }
+        updateList();
+
         Log.d("TAG", "OnResume");
         if(rvStateBundle != null){
             Parcelable listState = rvStateBundle.getParcelable(KEY_RECYCLER_STATE);
@@ -162,14 +178,8 @@ public class MovieListFragment extends Fragment {
         SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
         sortBy = sharedPref.getString(getString(R.string.pref_sort_key), getString(R.string.favorites));
         if(sortBy.equals(getString(R.string.favorites))){
-//            MovieLab movieLab = MovieLab.get(getActivity());
             movies.clear();
             Cursor cursor = getAllMovies();
-//                    getActivity().getContentResolver().query(MovieContract.MovieEntry.CONTENT_URI,
-//                    null,
-//                    null,
-//                    null,
-//                    null);
             cursor.moveToFirst();
             if(cursor.getCount()!= 0){
                 movies.add(getMovieFromCursor(cursor));
@@ -221,6 +231,13 @@ public class MovieListFragment extends Fragment {
     }
 
     public class FetchMovieTask extends AsyncTask<String, Void, String[]> {
+
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            isLoading = true;
+        }
 
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
 
@@ -346,6 +363,7 @@ public class MovieListFragment extends Fragment {
 //            updateList();
             mRecyclerView.getRecycledViewPool().clear();
             mMovieAdapter.notifyDataSetChanged();
+            isLoading = false;
             super.onPostExecute(strings);
         }
     }
